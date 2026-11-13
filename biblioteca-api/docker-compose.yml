@@ -1,0 +1,16 @@
+services:
+  mariadb:
+    image: mariadb:11.4
+    container_name: biblioteca-mariadb
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: biblioteca
+      MARIADB_USER: biblioteca
+      MARIADB_PASSWORD: biblioteca
+    volumes:
+      - biblioteca-data:/var/lib/mysql
+volumes:
+  biblioteca-data:
