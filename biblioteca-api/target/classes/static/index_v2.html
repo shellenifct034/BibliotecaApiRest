@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biblioteca - API REST</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; margin: 2rem; background-color: #f5f5f5; color: #333; }
+    h1 { margin-bottom: 1rem; }
+    nav { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    nav button { background-color: #ddd; color: #333; padding: 10px 18px; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 1rem; }
+    nav button.activo { background-color: #4CAF50; color: white; }
+    section { display: none; background: white; padding: 1.5rem; border-radius: 8px; }
+    section.activa { display: block; }
+    h2 { margin-top: 0; }
+    h3 { margin-top: 1.5rem; }
+    table { border-collapse: collapse; width: 100%; margin-top: 0.5rem; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 0.9rem; }
+    th { background-color: #4CAF50; color: white; }
+    tr:nth-child(even) { background-color: #f2f2f2; }
+    td.acciones { white-space: nowrap; }
+    td.acciones button { margin-right: 4px; padding: 4px 8px; font-size: 0.85rem; }
+    input { margin: 4px; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+    input[type=number] { width: 100px; }
+    button { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
+    button.principal { background-color: #4CAF50; color: white; }
+    button.principal:hover { background-color: #45a049; }
+    button.secundario { background-color: #888; color: white; }
+    button.peligro { background-color: #d9534f; color: white; }
+    button.aviso { background-color: #f0ad4e; color: white; }
+    button:hover { opacity: 0.9; }
+    .barra { background: #f9f9f9; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+    #mensaje { margin: 1rem 0; padding: 10px; border-radius: 4px; display: none; }
+    #mensaje.error { display: block; background-color: #f8d7da; color: #721c24; }
+    #mensaje.exito { display: block; background-color: #d4edda; color: #155724; }
+    .modo-edicion { background: #fff3cd; padding: 6px 10px; border-radius: 4px; margin-bottom: 0.5rem; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+<h1>Biblioteca</h1>
+<div id="mensaje"></div>
+<nav>
+  <button data-tab="libros" class="activo">Libros</button>
+  <button data-tab="usuarios">Usuarios</button>
+  <button data-tab="prestamos">Préstamos</button>
+</nav>
+<!-- ============ LIBROS ============ -->
+<section id="tab-libros" class="activa">
+  <h2>Libros</h2>
+  <div class="barra">
+    <input type="text" id="buscar-titulo" placeholder="Buscar por título">
+    <button class="principal" onclick="buscarLibrosPorTitulo()">Buscar</button>
+    <button class="secundario" onclick="listarLibros()">Mostrar todos</button>
+    <input type="text" id="buscar-isbn" placeholder="Buscar por ISBN">
+    <button class="principal" onclick="buscarLibroPorIsbn()">Buscar ISBN</button>
+  </div>
+  <table>
+    <thead>
+    <tr>
+      <th>ISBN</th>
+      <th>Título</th>
+      <th>Autor</th>
+      <th>Año</th>
+      <th>Prestado</th>
+      <th>Acciones</th>
+    </tr>
+    </thead>
+    <tbody id="tabla-libros"></tbody>
+  </table>
+  <h3 id="titulo-form-libro">Agregar libro</h3>
+  <div id="modo-edicion-libro" class="modo-edicion" style="display:none"></div>
+  <form id="form-libro">
+    <input type="text" id="libro-isbn" placeholder="ISBN" required>
+    <input type="text" id="libro-titulo" placeholder="Título" required>
+    <input type="text" id="libro-autor" placeholder="Autor" required>
+    <input type="number" id="libro-anio" placeholder="Año" required>
+    <button type="submit" class="principal" id="btn-guardar-libro">Agregar</button>
+    <button type="button" class="secundario" id="btn-cancelar-libro" onclick="cancelarEdicionLibro()" style="display:none">Cancelar</button>
+  </form>
+</section>
+<!-- ============ USUARIOS ============ -->
+<section id="tab-usuarios">
+  <h2>Usuarios</h2>
+  <div class="barra">
+    <input type="text" id="buscar-nombre-usuario" placeholder="Buscar por nombre">
+    <button class="principal" onclick="buscarUsuariosPorNombre()">Buscar</button>
+    <button class="secundario" onclick="listarUsuarios()">Mostrar todos</button>
+  </div>
+  <table>
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>Nombre</th>
+      <th>Dirección</th>
+      <th>Teléfono</th>
+      <th>Activo</th>
+      <th>Acciones</th>
+    </tr>
+    </thead>
+    <tbody id="tabla-usuarios"></tbody>
+  </table>
+  <h3 id="titulo-form-usuario">Agregar usuario</h3>
+  <div id="modo-edicion-usuario" class="modo-edicion" style="display:none"></div>
+  <form id="form-usuario">
+    <input type="text" id="usuario-id" placeholder="ID usuario" required>
+    <input type="text" id="usuario-nombre" placeholder="Nombre" required>
+    <input type="text" id="usuario-direccion" placeholder="Dirección">
+    <input type="text" id="usuario-telefono" placeholder="Teléfono">
+    <button type="submit" class="principal" id="btn-guardar-usuario">Agregar</button>
+    <button type="button" class="secundario" id="btn-cancelar-usuario" onclick="cancelarEdicionUsuario()" style="display:none">Cancelar</button>
+  </form>
+</section>
+<!-- ============ PRÉSTAMOS ============ -->
+<section id="tab-prestamos">
+  <h2>Préstamos activos</h2>
+  <div class="barra">
+    <button class="secundario" onclick="listarPrestamos()">Actualizar</button>
+  </div>
+  <table>
+    <thead>
+    <tr>
+      <th>Libro</th>
+      <th>Usuario</th>
+      <th>Fecha préstamo</th>
+      <th>Devolución prevista</th>
+      <th>Acciones</th>
+    </tr>
+    </thead>
+    <tbody id="tabla-prestamos"></tbody>
+  </table>
+  <h3>Prestar libro</h3>
+  <form id="form-prestamo">
+    <input type="text" id="prestamo-isbn" placeholder="ISBN del libro" required>
+    <input type="text" id="prestamo-usuario" placeholder="ID del usuario" required>
+    <button type="submit" class="principal">Prestar</button>
+  </form>
+</section>
+<script>
+  const API = '/api/v1';
+  let isbnEnEdicion = null;
+  let usuarioEnEdicion = null;
+  // ==================== Utilidades ====================
+  function mostrarMensaje(texto, tipo) {
+    const div = document.getElementById('mensaje');
+    div.textContent = texto;
+    div.className = tipo;
+    if (tipo === 'exito') {
+      setTimeout(() => {
+        div.textContent = '';
+        div.className = '';
+      }, 4000);
+    }
+  }
+  async function leerError(response) {
+    const ct = response.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      try {
+        const data = await response.json();
+        if (typeof data === 'object' && data !== null) {
+          const mensajes = Object.entries(data)
+                  .filter(([k, v]) => typeof v === 'string' && !['timestamp', 'path', 'error'].includes(k))
+                  .map(([, v]) => v);
+          if (mensajes.length) return mensajes.join(' · ');
+          if (data.error) return data.error;
+        }
+        return 'Error ' + response.status;
+      } catch (e) {
+        return 'Error ' + response.status;
+      }
+    }
+    try {
+      const texto = await response.text();
+      return texto || ('Error ' + response.status);
+    } catch (e) {
+      return 'Error ' + response.status;
+    }
+  }
+  // ==================== Pestañas ====================
+  document.querySelectorAll('nav button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('nav button').forEach(b => b.classList.remove('activo'));
+      document.querySelectorAll('section').forEach(s => s.classList.remove('activa'));
+      btn.classList.add('activo');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('activa');
+      if (btn.dataset.tab === 'libros') listarLibros();
+      if (btn.dataset.tab === 'usuarios') listarUsuarios();
+      if (btn.dataset.tab === 'prestamos') listarPrestamos();
+    });
+  });
+  // ==================== Libros ====================
+  async function listarLibros() {
+    try {
+      const r = await fetch(API + '/libros');
+      if (!r.ok) throw new Error(await leerError(r));
+      pintarLibros(await r.json());
+    } catch (e) {
+      mostrarMensaje('Error al listar libros: ' + e.message, 'error');
+    }
+  }
+  async function buscarLibrosPorTitulo() {
+    const titulo = document.getElementById('buscar-titulo').value.trim();
+    try {
+      const r = await fetch(API + '/libros/buscar?titulo=' + encodeURIComponent(titulo));
+      if (!r.ok) throw new Error(await leerError(r));
+      const libros = await r.json();
+      pintarLibros(libros);
+      if (!libros.length) mostrarMensaje('No se encontraron libros con ese título', 'error');
+    } catch (e) {
+      mostrarMensaje('Error: ' + e.message, 'error');
+    }
+  }
+  async function buscarLibroPorIsbn() {
+    const isbn = document.getElementById('buscar-isbn').value.trim();
+    if (!isbn) return;
+    try {
+      const r = await fetch(API + '/libros/' + encodeURIComponent(isbn));
+      if (!r.ok) throw new Error(await leerError(r));
+      pintarLibros([await r.json()]);
+    } catch (e) {
+      mostrarMensaje('Error: ' + e.message, 'error');
+    }
+  }
+  function pintarLibros(libros) {
+    const tbody = document.getElementById('tabla-libros');
+    tbody.innerHTML = '';
+    libros.forEach(l => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+               <td>${l.isbn}</td>
+               <td>${l.titulo}</td>
+               <td>${l.autor}</td>
+               <td>${l.anioPublicacion}</td>
+               <td>${l.prestado ? 'Sí' : 'No'}</td>
+               <td class="acciones">
+                   <button class="aviso" onclick="editarLibro('${l.isbn}')">Editar</button>
+                   <button class="peligro" onclick="eliminarLibro('${l.isbn}')">Eliminar</button>
+               </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  async function editarLibro(isbn) {
+    try {
+      const r = await fetch(API + '/libros/' + encodeURIComponent(isbn));
+      if (!r.ok) throw new Error(await leerError(r));
+      const libro = await r.json();
+      isbnEnEdicion = libro.isbn;
+      document.getElementById('libro-isbn').value = libro.isbn;
+      document.getElementById('libro-isbn').disabled = true;
+      document.getElementById('libro-titulo').value = libro.titulo;
+      document.getElementById('libro-autor').value = libro.autor;
+      document.getElementById('libro-anio').value = libro.anioPublicacion;
+      document.getElementById('titulo-form-libro').textContent = 'Actualizar libro';
+      document.getElementById('modo-edicion-libro').textContent = 'Editando ISBN ' + libro.isbn;
+      document.getElementById('modo-edicion-libro').style.display = 'block';
+      document.getElementById('btn-guardar-libro').textContent = 'Actualizar';
+      document.getElementById('btn-cancelar-libro').style.display = 'inline-block';
+      document.getElementById('form-libro').scrollIntoView({ behavior: 'smooth' });
+    } catch (e) {
+      mostrarMensaje('Error al cargar el libro: ' + e.message, 'error');
+    }
+  }
+  function cancelarEdicionLibro() {
+    isbnEnEdicion = null;
+    document.getElementById('form-libro').reset();
+    document.getElementById('libro-isbn').disabled = false;
+    document.getElementById('titulo-form-libro').textContent = 'Agregar libro';
+    document.getElementById('modo-edicion-libro').style.display = 'none';
+    document.getElementById('btn-guardar-libro').textContent = 'Agregar';
+    document.getElementById('btn-cancelar-libro').style.display = 'none';
+  }
+  async function guardarLibro(event) {
+    event.preventDefault();
+    const libro = {
+      isbn: document.getElementById('libro-isbn').value.trim(),
+      titulo: document.getElementById('libro-titulo').value.trim(),
+      autor: document.getElementById('libro-autor').value.trim(),
+      anioPublicacion: parseInt(document.getElementById('libro-anio').value)
+    };
+    const editando = isbnEnEdicion !== null;
+    const url = editando ? API + '/libros/' + encodeURIComponent(isbnEnEdicion) : API + '/libros';
+    const metodo = editando ? 'PUT' : 'POST';
+    try {
+      const r = await fetch(url, {
+        method: metodo,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(libro)
+      });
+      if (!r.ok) throw new Error(await leerError(r));
+      mostrarMensaje(editando ? 'Libro actualizado' : 'Libro agregado', 'exito');
+      if (editando) cancelarEdicionLibro();
+      else document.getElementById('form-libro').reset();
+      listarLibros();
+    } catch (e) {
+      mostrarMensaje('Error: ' + e.message, 'error');
+    }
+  }
+  async function eliminarLibro(isbn) {
+    if (!confirm('¿Eliminar el libro ' + isbn + '?')) return;
+    try {
+      const r = await fetch(API + '/libros/' + encodeURIComponent(isbn), { method: 'DELETE' });
+      if (!r.ok) throw new Error(await leerError(r));
+      mostrarMensaje('Libro eliminado', 'exito');
+      listarLibros();
+    } catch (e) {
+      mostrarMensaje('Error: ' + e.message, 'error');
+    }
+  }
+  // ==================== Usuarios ====================
+  async function listarUsuarios() {
+    try {
+      const r = await fetch(API + '/usuarios');
+      if (!r.ok) throw new Error(await leerError(r));
+      pintarUsuarios(await r.json());
+    } catch (e) {
+      mostrarMensaje('Error al listar usuarios: ' + e.message, 'error');
+    }
+  }
+  async function buscarUsuariosPorNombre() {
+    const nombre = document.getElementById('buscar-nombre-usuario').value.trim();
+    try {
+      const r = await fetch(API + '/usuarios/buscar?nombre=' + encodeURIComponent(nombre));
+      if (!r.ok) throw new Error(await leerError(r));
+      const usuarios = await r.json();
+      pintarUsuarios(usuarios);
+      if (!usuarios.length) mostrarMensaje('No se encontraron usuarios con ese nombre', 'error');
+    } catch (e) {
+      mostrarMensaje('Error: ' + e.message, 'error');
+    }
+  }
+  function pintarUsuarios(usuarios) {
+    const tbody = document.getElementById('tabla-usuarios');
+    tbody.innerHTML = '';
+    usuarios.forEach(u => {
+      const botonEstado = u.activo
+              ? `<button class="peligro" onclick="cambiarEstadoUsuario('${u.idUsuario}', 'desactivar')">Desactivar</button>`
+              : `<button class="aviso" onclick="cambiarEstadoUsuario('${u.idUsuario}', 'activar')">Activar</button>`;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+               <td>${u.idUsuario}</td>
+               <td>${u.nombre}</td>
+               <td>${u.direccion || ''}</td>
+               <td>${u.telefono || ''}</td>
+               <td>${u.activo ? 'Sí' : 'No'}</td>
+               <td class="acciones">
+                   <button class="aviso" onclick="editarUsuario('${u.idUsuario}')">Editar</button>
+                   ${botonEstado}
+                   <button class="peligro" onclick="eliminarUsuario('${u.idUsuario}')">Eliminar</button>
+               </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  async function editarUsuario(idUsuario) {
+    try {
+      const r = await fetch(API + '/usuarios/' + encodeURIComponent(idUsuario));
+      if (!r.ok) throw new Error(await leerError(r));
+      const u = await r.json();
+      usuarioEnEdicion = u.idUsuario;
+      document.getElementById('usuario-id').value = u.idUsuario;
+      document.getElementById('usuario-id').disabled = true;
+      document.getElementById('usuario-nombre').value = u.nombre;
+      document.getElementById('usuario-direccion').value = u.direccion || '';
+      document.getElementById('usuario-telefono').value = u.telefono || '';
+      document.getElementById('titulo-form-usuario').textContent = 'Actualizar usuario';
+      document.getElementById('modo-edicion-usuario').textContent = 'Editando usuario ' + u.idUsuario;
+      document.getElementById('modo-edicion-usuario').style.display = 'block';
+      document.getElementById('btn-guardar-usuario').textContent = 'Actualizar';
+      document.getElementById('btn-cancelar-usuario').style.display = 'inline-block';
+      document.getElementById('form-usuario').scrollIntoView({ behavior: 'smooth' });
+    } catch (e) {
+      mostrarMensaje('Error: ' + e.message, 'error');
+    }
+  }
+  function cancelarEdicionUsuario() {
+    usuarioEnEdicion = null;
+    document.getElementById('form-usuario').reset();
+    document.getElementById('usuario-id').disabled = false;
+    document.getElementById('titulo-form-usuario').textContent = 'Agregar usuario';
+    document.getElementById('modo-edicion-usuario').style.display = 'none';
+    document.getElementById('btn-guardar-usuario').textContent = 'Agregar';
+    document.getElementById('btn-cancelar-usuario').style.display = 'none';
+  }
+  async function guardarUsuario(event) {
+    event.preventDefault();
+    const usuario = {
+      idUsuario: document.getElementById('usuario-id').value.trim(),
+      nombre: document.getElementById('usuario-nombre').value.trim(),
+      direccion: document.getElementById('usuario-direccion').value.trim(),
+      telefono: document.getElementById('usuario-telefono').value.trim()
+    };
+    const editando = usuarioEnEdicion !== null;
+    const url = editando ? API + '/usuarios/' + encodeURIComponent(usuarioEnEdicion) : API + '/usuarios';
+    const metodo = editando ? 'PUT' : 'POST';
+    try {
+      const r = await fetch(url, {
+        method: metodo,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(usuario)
+      });
+      if (!r.ok) throw new Error(await leerError(r));
+      mostrarMensaje(editando ? 'Usuario actualizado' : 'Usuario agregado', 'exito');
+      if (editando) cancelarEdicionUsuario();
+      else document.getElementById('form-usuario').reset();
+      listarUsuarios();
+    } catch (e) {
+      mostrarMensaje('Error: ' + e.message, 'error');
+    }
+  }
+  async function eliminarUsuario(idUsuario) {
+    if (!confirm('¿Eliminar el usuario ' + idUsuario + '?')) return;
+    try {
+      const r = await fetch(API + '/usuarios/' + encodeURIComponent(idUsuario), { method: 'DELETE' });
+      if (!r.ok) throw new Error(await leerError(r));
+      mostrarMensaje('Usuario eliminado', 'exito');
+      listarUsuarios();
+    } catch (e) {
+      mostrarMensaje('Error: ' + e.message, 'error');
+    }
+  }
+  async function cambiarEstadoUsuario(idUsuario, accion) {
+    try {
+      const r = await fetch(API + '/usuarios/' + encodeURIComponent(idUsuario) + '/' + accion, { method: 'PUT' });
+      if (!r.ok) throw new Error(await leerError(r));
+      mostrarMensaje(accion === 'activar' ? 'Usuario activado' : 'Usuario desactivado', 'exito');
+      listarUsuarios();
+    } catch (e) {
+      mostrarMensaje('Error: ' + e.message, 'error');
+    }
+  }
+  // ==================== Préstamos ====================
+  async function listarPrestamos() {
+    try {
+      const r = await fetch(API + '/prestamos');
+      if (!r.ok) throw new Error(await leerError(r));
+      pintarPrestamos(await r.json());
+    } catch (e) {
+      mostrarMensaje('Error al listar préstamos: ' + e.message, 'error');
+    }
+  }
+  function pintarPrestamos(prestamos) {
+    const tbody = document.getElementById('tabla-prestamos');
+    tbody.innerHTML = '';
+    if (!prestamos.length) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td colspan="5" style="text-align:center;color:#888">No hay préstamos activos</td>';
+      tbody.appendChild(tr);
+      return;
+    }
+    prestamos.forEach(p => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+               <td>${p.libro ? p.libro.titulo + ' (' + p.libro.isbn + ')' : ''}</td>
+               <td>${p.usuario ? p.usuario.nombre + ' (' + p.usuario.idUsuario + ')' : ''}</td>
+               <td>${p.fechaPrestamo}</td>
+               <td>${p.fechaDevolucionPrevista}</td>
+               <td class="acciones">
+                   <button class="principal" onclick="devolverLibro('${p.libro.isbn}')">Devolver</button>
+               </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  async function prestarLibro(event) {
+    event.preventDefault();
+    const isbn = document.getElementById('prestamo-isbn').value.trim();
+    const idUsuario = document.getElementById('prestamo-usuario').value.trim();
+    try {
+      const r = await fetch(API + '/prestamos?isbn=' + encodeURIComponent(isbn) + '&idUsuario=' + encodeURIComponent(idUsuario), {
+        method: 'POST'
+      });
+      if (!r.ok) throw new Error(await leerError(r));
+      mostrarMensaje('Préstamo registrado', 'exito');
+      document.getElementById('form-prestamo').reset();
+      listarPrestamos();
+    } catch (e) {
+      mostrarMensaje('Error: ' + e.message, 'error');
+    }
+  }
+  async function devolverLibro(isbn) {
+    try {
+      const r = await fetch(API + '/prestamos/devolver/' + encodeURIComponent(isbn), { method: 'PUT' });
+      if (!r.ok) throw new Error(await leerError(r));
+      mostrarMensaje('Devolución registrada', 'exito');
+      listarPrestamos();
+    } catch (e) {
+      mostrarMensaje('Error: ' + e.message, 'error');
+    }
+  }
+  // ==================== Registro de eventos e inicio ====================
+  document.getElementById('form-libro').addEventListener('submit', guardarLibro);
+  document.getElementById('form-usuario').addEventListener('submit', guardarUsuario);
+  document.getElementById('form-prestamo').addEventListener('submit', prestarLibro);
+  listarLibros();
+  listarUsuarios();
+  listarPrestamos();
+</script>
+</body>
+</html>
