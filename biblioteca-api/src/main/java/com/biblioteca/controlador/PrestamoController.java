@@ -26,6 +26,11 @@ public class PrestamoController {
     public ResponseEntity<List<Prestamo>> listarPrestamosActivos() {
         return ResponseEntity.ok(servicioPrestamo.listarPrestamosActivos());
     }
+    @GetMapping("/historico")
+    @Operation(summary = "Listar el histórico completo de préstamos (activos y devueltos)")
+    public ResponseEntity<List<Prestamo>> listarHistorico() {
+        return ResponseEntity.ok(servicioPrestamo.listarHistorico());
+    }
     @PostMapping
     @Operation(summary = "Prestar un libro a un usuario")
     @ApiResponse(responseCode = "201", description = "Préstamo registrado")
