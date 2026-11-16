@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca - API REST</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; background-color: #f5f5f5; }
+        h1 { color: #333; }
+        table { border-collapse: collapse; width: 100%; margin-top: 1rem; background: white; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #4CAF50; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        form { margin-top: 2rem; background: white; padding: 1rem; border-radius: 8px; }
+        input { margin: 4px; padding: 6px; }
+        button { background-color: #4CAF50; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        #mensaje { margin-top: 1rem; padding: 8px; border-radius: 4px; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .exito { background-color: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+<h1>Biblioteca</h1>
+
+
+
+
+<h2>Libros</h2>
+<table id="tablaLibros">
+    <thead>
+    <tr>
+        <th>ISBN</th>
+        <th>Título</th>
+        <th>Autor</th>
+        <th>Año</th>
+        <th>Prestado</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+
+
+
+<h2>Agregar libro</h2>
+<form id="formLibro">
+    <input type="text" id="isbn" placeholder="ISBN" required>
+    <input type="text" id="titulo" placeholder="Título" required>
+    <input type="text" id="autor" placeholder="Autor" required>
+    <input type="number" id="anio" placeholder="Año" required>
+    <button type="submit">Agregar</button>
+</form>
+<div id="mensaje"></div>
+
+
+
+
+<script>
+    const API_URL = '/api/v1/libros';
+
+
+
+
+    async function cargarLibros() {
+        try {
+            const response = await fetch(API_URL);
+            if (!response.ok) {
+                throw new Error('Error al cargar los libros');
+            }
+            const libros = await response.json();
+            const tbody = document.querySelector('#tablaLibros tbody');
+            tbody.innerHTML = '';
+            libros.forEach(libro => {
+                const fila = document.createElement('tr');
+                fila.innerHTML = `
+                       <td>${libro.isbn}</td>
+                       <td>${libro.titulo}</td>
+                       <td>${libro.autor}</td>
+                       <td>${libro.anioPublicacion}</td>
+                       <td>${libro.prestado ? 'Sí' : 'No'}</td>
+                   `;
+                tbody.appendChild(fila);
+            });
+        } catch (error) {
+            mostrarMensaje('Error al cargar los libros: ' + error.message, 'error');
+        }
+    }
+
+
+
+
+    async function agregarLibro(event) {
+        event.preventDefault();
+        const libro = {
+            isbn: document.getElementById('isbn').value,
+            titulo: document.getElementById('titulo').value,
+            autor: document.getElementById('autor').value,
+            anioPublicacion: parseInt(document.getElementById('anio').value)
+        };
+
+
+
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(libro)
+            });
+
+
+
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.mensaje || 'Error al agregar el libro');
+            }
+
+
+
+
+            mostrarMensaje('Libro agregado correctamente', 'exito');
+            document.getElementById('formLibro').reset();
+            cargarLibros();
+        } catch (error) {
+            mostrarMensaje('Error: ' + error.message, 'error');
+        }
+    }
+
+
+
+
+    function mostrarMensaje(texto, tipo) {
+        const div = document.getElementById('mensaje');
+        div.textContent = texto;
+        div.className = tipo;
+        setTimeout(() => {
+            div.textContent = '';
+            div.className = '';
+        }, 5000);
+    }
+
+
+
+
+    document.getElementById('formLibro').addEventListener('submit', agregarLibro);
+    cargarLibros();
+</script>
+</body>
+</html>
