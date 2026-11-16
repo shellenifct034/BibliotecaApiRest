@@ -1,16 +1,32 @@
 services:
-  mariadb:
-    image: mariadb:11.4
-    container_name: biblioteca-mariadb
-    restart: unless-stopped
-    ports:
-      - "3307:3306"
-    environment:
-      MARIADB_ROOT_PASSWORD: root
-      MARIADB_DATABASE: biblioteca
-      MARIADB_USER: biblioteca
-      MARIADB_PASSWORD: biblioteca
-    volumes:
-      - biblioteca-data:/var/lib/mysql
+ mariadb:
+   image: mariadb:11.4
+   container_name: biblioteca-mariadb
+   restart: unless-stopped
+   ports:
+     - "3307:3306"
+   environment:
+     MARIADB_ROOT_PASSWORD: root
+     MARIADB_DATABASE: biblioteca
+     MARIADB_USER: biblioteca
+     MARIADB_PASSWORD: biblioteca
+   volumes:
+     - biblioteca-data:/var/lib/mysql
+   healthcheck:
+     test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+     interval: 5s
+     timeout: 5s
+     retries: 10
+ app:
+   build: .
+   container_name: biblioteca-api
+   restart: unless-stopped
+   ports:
+     - "8080:8080"
+   environment:
+     SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/biblioteca
+   depends_on:
+     mariadb:
+       condition: service_healthy
 volumes:
-  biblioteca-data:
+ biblioteca-data:
